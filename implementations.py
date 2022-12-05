@@ -33,7 +33,7 @@ def data_file(i):
 
 def clean_df(df):
     #Select interesting values
-    df_new = df[['DX', 'DY', 'DZ', 'KinE(MeV)', 'dE(MeV)',\
+    df_new = df[["X(mm)","Y(mm)","Z(mm)",'DX', 'DY', 'DZ', 'KinE(MeV)', 'dE(MeV)',\
                  'StepLeng', 'NextVolume', 'ProcName']]
 
     #Remove unnecessary lines
@@ -51,9 +51,9 @@ def clean_df(df):
     df_new2 = df_new.loc[df_new['index']==':']
 
     #Store the lines with new columns to get the info about this new particle
-    df_new3 = pd.DataFrame(columns=['DX_s', 'DY_s', 'DZ_s','Kin(MeV)_s', 'name_s'])
-    df_new3[['DX_s', 'DY_s', 'DZ_s','Kin(MeV)_s', 'name_s']]\
-    =df_new2[['DX', 'DY', 'DZ', 'KinE(MeV)', 'dE(MeV)']]
+    df_new3 = pd.DataFrame(columns=["X(mm)_s","Y(mm)_s","Z(mm)_s",'DX_s', 'DY_s', 'DZ_s','Kin(MeV)_s', 'name_s'])
+    df_new3[["X(mm)_s","Y(mm)_s","Z(mm)_s",'DX_s', 'DY_s', 'DZ_s','Kin(MeV)_s', 'name_s']]\
+    =df_new2[["X(mm)","Y(mm)","Z(mm)",'DX', 'DY', 'DZ', 'KinE(MeV)', 'dE(MeV)']]
 
     #Store the information on the index that created the particle (-2 because we also removed a line before)
     df_new3.set_index(df_new3.index - 2, inplace=True)
@@ -64,13 +64,54 @@ def clean_df(df):
     #Now we can remove the indicator lines and focus on the inside material (phantom)
     df_new = df_new[~df_new['index'].str.startswith(':')]
     df_new = df_new[(df_new['NextVolume'] == 'phantom')]
-    df_new.drop('NextVolume', axis=1, inplace=True)
+    df_new.drop(['ProcName','NextVolume'], axis=1, inplace=True)
     
     #Finally get new indexing for clarity
     df_new=df_new.reset_index(drop=True)
     
+    #Remove NAN values
+    df_new[["X(mm)_s","Y(mm)_s","Z(mm)_s",'DX_s', 'DY_s', 'DZ_s','Kin(MeV)_s', 'name_s']]\
+    = df_new[["X(mm)_s","Y(mm)_s","Z(mm)_s",'DX_s', 'DY_s', 'DZ_s','Kin(MeV)_s', 'name_s']].fillna(0)
+    
+    #Get numeric types
+    df_new[['index', "X(mm)","Y(mm)","Z(mm)",'DX', 'DY', 'DZ', 'KinE(MeV)', 'dE(MeV)','StepLeng',\
+          "X(mm)_s","Y(mm)_s","Z(mm)_s",'DX_s', 'DY_s', 'DZ_s','Kin(MeV)_s']] = \
+    df_new[['index', "X(mm)","Y(mm)","Z(mm)",'DX', 'DY', 'DZ', 'KinE(MeV)', 'dE(MeV)','StepLeng',\
+          "X(mm)_s","Y(mm)_s","Z(mm)_s",'DX_s', 'DY_s', 'DZ_s','Kin(MeV)_s']]\
+    .apply(pd.to_numeric)
+    
+    
     return df_new
 
+
+
+def input_output_bis(df):
+    """ This function create two dataframe X of input and the Y of output, it would be neccessary to train 
+    our data and creating a model for future prediciton 
+    
+    Return : 
+        X : The input data composed of the following feature size (nb_inputs, 7)
+            - pos (x,y,z)
+            - dir (dx,dy,dz)
+            - E 
+            
+        Y : The output data, of size (nb_inputs, 7)
+            - dE
+            - distance=steplength
+            - cos(psi) nouvelle trajectoir
+            - Q (pos_s, dir_s, type_s, E_s)
+        
+    """
+    pd.options.mode.chained_assignment = None
+    df_input = df_clean[["X(mm)","Y(mm)","Z(mm)","DX","DY","DZ","KinE(MeV)"]]
+    
+    df_output = df_clean[['dE(MeV)', 'StepLeng', "X(mm)_s","Y(mm)_s","Z(mm)_s",\
+                'DX_s', 'DY_s', 'DZ_s','Kin(MeV)_s', 'name_s']]
+
+    df_output['dE(MeV)'] = df_output['dE(MeV)'] + df_output['Kin(MeV)_s']
+    
+    df_output
+    
 
 def input_output(df) :
     """ This function create two dataframe X of input and the Y of output, it would be neccessary to train 
