@@ -1,12 +1,13 @@
 import pandas as pd
 import numpy as np
+import numpy as np, queue, pylab as plt, random, sys, enum, math
 
 def build_df(data_path):
     data = pd.read_csv(data_path,sep="\s+")
     dframe=pd.DataFrame(data)
     #Step# is the the new row name
     dframe.index=dframe.iloc[:,0]
-    #remove column od Step# and Nan column
+    #remove column of Step# and Nan column
     dframe=dframe.drop(["*",'0'],axis=1)
     #concatenate 2 columns in 1
     dframe["ID.1"]+dframe["=.2"]
@@ -111,6 +112,11 @@ def creation_array(df) :
             - Q  <--- (name_s [3], x_s [4], y_s [5], z_s [6], dx_s [7], dy_s [8], dz_s [9], KinE(MeV)_s [10])
         
     """
+    df = df.copy(deep = True)
+    
+    DONE = 0
+    size_df = df.shape[0]
+    
     #conversion of the dataframe into a numpy array :
     df['name_s'] = df['name_s'].apply(type_to_num)
     data = df.to_numpy()
@@ -121,8 +127,9 @@ def creation_array(df) :
     
     for idx, data_x in enumerate(data[:-1]) :
     # Until we are at the end of the simulation (We don't iterate on the last element as we access in this loof the i+1 element) 
-
+        DONE += 1
         if (data[idx+1, 0] != 0) :
+            
             line_input = []
 
             #Creation of the line idx of the matrix X and Y
@@ -165,10 +172,13 @@ def creation_array(df) :
                 line_output.append(data_x[17])
                 line_output += [data_x[10], data_x[11], data_x[12], data_x[13], data_x[14], data_x[15], data_x[16]]
                 
-
-
+        
         X.append(line_input)
         Y.append(line_output)
+        if (DONE%1000 == 0) :
+            sys.stdout.write(f"Finished {DONE:8} out of {size_df:8} {(100.0*DONE)/size_df:.2f} %\r"); sys.stdout.flush()
+
+
 
         
     return np.asarray(X), np.asarray(Y)
