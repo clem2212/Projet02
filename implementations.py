@@ -19,7 +19,7 @@ def build_df(data_path):
     init_E
     dframe.loc[dframe["StepLeng"] == 'initStep', ['DX', 'DY', 'DZ', 'KinE(MeV)','dE(MeV)', 'StepLeng', 'TrackLeng',\
                                       "NextVolume","ProcName"]]\
-    =['0', '0', '0', init_E, '0', '0', '0', 'phantom', 'msc']
+    =['1', '0', '0', init_E, '0', '0', '0', 'phantom', 'msc']
     return dframe
 
 
@@ -84,6 +84,23 @@ def clean_df(df):
     return df_new
 
 
+
+def get_cos(df):
+    df_new = df.copy(deep=True)
+    data = df_new.to_numpy()
+    cos_theta = []
+    list_ind = []
+    for idx, data_x in enumerate(data[:-1]) :
+        if (data[idx+1, 0] != 0) :
+            list_ind.append(idx)
+            cos_theta.append(np.clip(data[idx+1, 4]*data_x[4] + data[idx+1, 5]*data_x[5] + data[idx+1, 6]*data_x[6],-1,1))
+    df_new = df_new.iloc[list_ind]
+    df_new['cos_theta'] = cos_theta
+    return df_new
+    
+    
+    
+    
 def type_to_num(ptcl):
     #Each particle is associated to an integer number 
     if(ptcl == 'gamma'):
@@ -249,4 +266,34 @@ def evaluate_model(model, x_test, y_test):
             'fpr': fpr, 'tpr': tpr, 'auc': auc, 'cm': cm}
             """
     return {'acc': acc, 'cm': cm}
+    
+    
+    
+def map_energy_ranges(data, energy_ranges):
+    data_emission = data.copy(deep=True)
+    data_emission['E_range'] = 0
+    for i, E in enumerate(energy_ranges):
+        if(i==0):
+            data_emission.loc[(data_emission['KinE(MeV)'] <= E), 'E_range'] = '0 _ ' + '%.1f' % E
+        if(i==len(energy_ranges)-1):
+            data_emission.loc[(data_emission['KinE(MeV)'] > energy_ranges[i-1]) & (data_emission['KinE(MeV)'] <= E), 'E_range']\
+            = '%.1f' % energy_ranges[i-1] + ' _ ' + '%.1f' % E
+            data_emission.loc[(data_emission['KinE(MeV)'] > E), 'E_range'] = '%.1f' % E + ' _ 20'
+        else:
+            data_emission.loc[(data_emission['KinE(MeV)'] > energy_ranges[i-1]) & (data_emission['KinE(MeV)'] <= E), 'E_range']\
+            = '%.1f' % energy_ranges[i-1] + ' _ ' + '%.1f' % E
+    return data_emission
+
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
