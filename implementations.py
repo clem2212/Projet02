@@ -248,26 +248,49 @@ def evaluate_model(model, x_test, y_test):
     # Display confussion matrix
     cm = metrics.confusion_matrix(y_test, y_pred)
     
-    """
-    prec = metrics.precision_score(y_test, y_pred)
-    rec = metrics.recall_score(y_test, y_pred)
-    f1 = metrics.f1_score(y_test, y_pred)
-    kappa = metrics.cohen_kappa_score(y_test, y_pred)
-
-    # Calculate area under curve (AUC)
-    y_pred_proba = model.predict_proba(x_test)[::,1]
-    fpr, tpr, _ = metrics.roc_curve(y_test, y_pred_proba)
-    auc = metrics.roc_auc_score(y_test, y_pred_proba)
-
-    # Display confussion matrix
-    cm = metrics.confusion_matrix(y_test, y_pred)
-
-    return {'acc': acc, 'prec': prec, 'rec': rec, 'f1': f1, 'kappa': kappa, 
-            'fpr': fpr, 'tpr': tpr, 'auc': auc, 'cm': cm}
-            """
-    return {'acc': acc, 'cm': cm}
+    #Individual accuracy of the type of emission 
+    acc_0 = get_accuracy(cm, 0)
+    acc_1 = get_accuracy(cm, 1)
+    acc_2 = get_accuracy(cm, 2)
     
+            
+    return {'acc': acc, 'cm': cm, 'acc0' : acc_0, 'acc1' : acc_1, 'acc2' : acc_2}
+
+
+def get_accuracy(cm, n) : 
+    #cm is the confussion matrix and n = 0,1 or 2:
     
+    if n == 0 : 
+        #true positive
+        TP = cm[0,0]
+        TN = cm[1,1] + cm[1,2] + cm[2,1] + cm[2,2]
+        FN = cm[0,1] + cm[0,2]
+        FP = cm[1,0] + cm[2,0]
+        
+    if n == 1 : 
+        TP = cm[1,1]
+        TN = cm[0,0] + cm[0,2] + cm[2,0] + cm[2,2]
+        FN = cm[1,0] + cm[1,2]
+        FP = cm[0,1] + cm[2,1]
+        
+    if n == 2 : 
+        TP = cm[2,2]
+        TN = cm[0,0] + cm[0,1] + cm[1,0] + cm[1,1]
+        FN = cm[2,0] + cm[2,1]
+        FP = cm[0,2] + cm[1,2]
+        
+    return (TP + TN)/(TP + TN + FP + FN)
+
+def percentage_predicted(cm, y_test) :
+    
+    size0 = (y_test == 0).sum()
+    pred0 = 100*cm[0,0]/size0
+    size1 = (y_test == 1).sum()
+    pred1 = 100*cm[1,1]/size1
+    size2 = (y_test == 2).sum()
+    pred2 = 100*cm[2,2]/size2
+    
+    return {'pred0': pred0, 'pred1': pred1, 'pred2' : pred2}
     
 def map_energy_ranges(data, energy_ranges):
     data_emission = data.copy(deep=True)
