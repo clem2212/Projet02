@@ -317,8 +317,8 @@ def proba_table(data, diff = 0.1) :
     E_next = E + diff
     range_energy = data[(data['KinE(MeV)']<=E_next) & (data['KinE(MeV)']>E)]
     prob = compute_proba(range_energy)
-    table = table.append({'Energy_min' : E, 'Energy_max' : E_next, 'proba_0' : prob[0], 'proba_1' : prob[1] ,
-                                                                      'proba_2' : prob[2]} , ignore_index=True)
+    
+    table.loc[len(table.index)] = [E, E_next, prob[0], prob[1], prob[2]]
     
     """ Treatment of the case where we don't have data to compute the probability so we don't accept 0 as
     proba (we extend the range of consideration )"""
@@ -336,8 +336,7 @@ def proba_table(data, diff = 0.1) :
             range_energy = data[(data['KinE(MeV)']<=E_next) & (data['KinE(MeV)']>E)]
             prob = compute_proba(range_energy)          
             
-        table = table.append({'Energy_min' : E, 'Energy_max' : E_next, 'proba_0' : prob[0], 'proba_1' : prob[1] ,
-                                                                          'proba_2' : prob[2]} , ignore_index=True)
+        table.loc[len(table.index)] = [E, E_next, prob[0], prob[1], prob[2]]
        
         sys.stdout.write(f"Finished {E_next:2} out of {20.0:2} {(100.0*E_next)/20:.2f} %\r"); sys.stdout.flush()
 
