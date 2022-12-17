@@ -28,10 +28,6 @@ def data_file(i):
 
 
 
-
-
-
-
 def clean_df(df):
     #Select interesting values
     df_new = df[["X(mm)","Y(mm)","Z(mm)",'DX', 'DY', 'DZ', 'KinE(MeV)', 'dE(MeV)',\
@@ -219,40 +215,6 @@ def creation_array(df) :
     return np.asarray(X), np.asarray(Y)
 
 
-def compute_loss(y, tx, w):
-    """Calculate the loss using either MSE or MAE.
-
-    Args:
-        y: shape=(N, )
-        tx: shape=(N,2)
-        w: shape=(2,). The vector of model parameters.
-
-    Returns:
-        the value of the loss (a scalar), corresponding to the input parameters w.
-    """
-    e = y - tx.dot(w)
-    return 1/2*np.mean(e**2)
-
-
-def least_squares(y, tx):
-    """Calculate the least square solution
-
-    Args:
-        y: numpy array of shape (N,), N is the number of samples.
-        tx: numpy array of shape (N,D), D is the number of features.
-
-    Returns:
-        w: optimal weights, numpy array of shape(D,), D is the number of features.
-        mse: scalar.
-    """
-
-    a = np.dot(tx.T, tx)
-    b = np.dot(tx.T, y)
-    w = np.linalg.solve(a, b)
-    mse = compute_loss(y, tx, w)
-
-    return w, mse
-
 
 def evaluate_model(model, x_test, y_test):
     from sklearn import metrics
@@ -274,6 +236,14 @@ def evaluate_model(model, x_test, y_test):
             
     return {'acc': acc, 'cm': cm, 'acc0' : acc_0, 'acc1' : acc_1, 'acc2' : acc_2}
 
+def get_percentage(cm, y_test) : 
+    
+    p0 = cm[0,0]/(y_test == 0).sum()*100
+    p1 = cm[1,1]/(y_test == 1).sum()*100
+    p2 = cm[2,2]/(y_test == 2).sum()*100
+    
+    return {'p0' : p0, 'p1' : p1, 'p2' : p2} 
+    
 
 def get_accuracy(cm, n) : 
     #cm is the confussion matrix and n = 0,1 or 2:
@@ -299,16 +269,6 @@ def get_accuracy(cm, n) :
         
     return (TP + TN)/(TP + TN + FP + FN)
 
-def percentage_predicted(cm, y_test) :
-    
-    size0 = (y_test == 0).sum()
-    pred0 = 100*cm[0,0]/size0
-    size1 = (y_test == 1).sum()
-    pred1 = 100*cm[1,1]/size1
-    size2 = (y_test == 2).sum()
-    pred2 = 100*cm[2,2]/size2
-    
-    return {'pred0': pred0, 'pred1': pred1, 'pred2' : pred2}
     
 def map_energy_ranges(data, energy_ranges):
     data_emission = data.copy(deep=True)
@@ -325,15 +285,65 @@ def map_energy_ranges(data, energy_ranges):
             = '%.1f' % energy_ranges[i-1] + ' _ ' + '%.1f' % E
     return data_emission
 
+            
+    
+    
+def compute_proba(df) : 
+    
+    """ Compute the probability of the classes in the energy range of the data_frame
+    n is the list with the numbe of 0, 1 and 2 of the initial data_frame"""
+    if (df.empty) : 
+        return [0,0,0]
+    
+    n_range = df['name_s'].value_counts().tolist()
+    if (len(n_range) != 3) : 
+        n_range = [0,0,0]
+        n_range[0] = (df['name_s']==0).sum()
+        n_range[1] = (df['name_s']=='e-').sum()
+        n_range[2] = (df['name_s']=='gamma').sum()
+    
+    
+    prob = n_range/np.sum(n_range)
 
+    return prob
     
     
+def proba_table(data, diff = 0.1) : 
     
     
+    table = pd.DataFrame(columns=['Energy_min', 'Energy_max' ,'proba_0','proba_1','proba_2'])
+   
+    E = 0
+    E_next = E + diff
+    range_energy = data[(data['KinE(MeV)']<=E_next) & (data['KinE(MeV)']>E)]
+    prob = compute_proba(range_energy)
+    table = table.append({'Energy_min' : E, 'Energy_max' : E_next, 'proba_0' : prob[0], 'proba_1' : prob[1] ,
+                                                                      'proba_2' : prob[2]} , ignore_index=True)
     
+    """ Treatment of the case where we don't have data to compute the probability so we don't accept 0 as
+    proba (we extend the range of consideration )"""
     
-    
-    
+    while (E_next<=20) :
+        
+        E = E_next
+        E_next = E_next + diff
+        range_energy = data[(data['KinE(MeV)']<=E_next) & (data['KinE(MeV)']>E)]
+        prob = compute_proba(range_energy)
+        
+
+        while ((np.asarray(prob) == 0).any() and  E_next <= 20.0):
+            E_next = E_next + diff
+            range_energy = data[(data['KinE(MeV)']<=E_next) & (data['KinE(MeV)']>E)]
+            prob = compute_proba(range_energy)          
+            
+        table = table.append({'Energy_min' : E, 'Energy_max' : E_next, 'proba_0' : prob[0], 'proba_1' : prob[1] ,
+                                                                          'proba_2' : prob[2]} , ignore_index=True)
+       
+        sys.stdout.write(f"Finished {E_next:2} out of {20.0:2} {(100.0*E_next)/20:.2f} %\r"); sys.stdout.flush()
+
+
+         
+    return table  
     
     
     
