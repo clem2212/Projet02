@@ -247,9 +247,9 @@ def train_GAN(g_lr=1e-4, d_lr=5e-4, batch_size=64, noise_dim=100, total_iteratio
 
 
 
-def Get_GAN_event(g_model=None,noise_dim=100):
+def Get_GAN_event(g_model=None):
     device = torch.device("cpu")
-    fixed_noise = torch.randn(1, noise_dim, device=device)
+    fixed_noise = torch.randn(1, noise_dim=100, device=device)
     return g_model(fixed_noise).cpu().detach().numpy()
     
 
