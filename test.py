@@ -80,7 +80,7 @@ for i in range(NMC) :
     zdir = 0.2*s
     xdir = math.sqrt(1 - ydir**2 - zdir**2)
     e = EMAX*random.gammavariate(2.0, 0.667)
-    P = Particle(0.0, ypos, zpos, xdir, ydir, zdir, e, Type.photon, True)
+    P = Particle(0.0, ypos, zpos, xdir, ydir, zdir, e, Type.electron, True)
     ToSimulate.put(P)
 
 DONE = 0 # count number of primary particles

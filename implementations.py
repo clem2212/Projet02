@@ -85,7 +85,7 @@ def clean_df(df):
 
 
 
-def get_cos(df):
+def get_cos_theta(df):
     df_new = df.copy(deep=True)
     data = df_new.to_numpy()
     cos_theta = []
@@ -97,7 +97,25 @@ def get_cos(df):
     df_new = df_new.iloc[list_ind]
     df_new['cos_theta'] = cos_theta
     return df_new
-    
+
+
+def get_angles(df_old):
+    df = df_old.copy(deep=True)
+    data = df.to_numpy()
+    cos_theta = []
+    cos_psi = []
+    list_ind = []
+    df['cos_phi'] = df['DX']*df['DX_s'] + df['DY']*df['DY_s'] + df['DZ']*df['DZ_s']
+    df['cos_phi'].clip(-1,1)
+    # DX: data_x[13], DY: data_x[14], DZ: data_x[15]
+    for idx, data_x in enumerate(data[:-1]) :
+        if (data[idx+1, 0] != 0) :
+            list_ind.append(idx)
+            cos_theta.append(np.clip(data[idx+1, 4]*data_x[4] + data[idx+1, 5]*data_x[5] + data[idx+1, 6]*data_x[6],-1,1))
+            cos_psi.append(np.clip(data[idx+1, 4]*data_x[13] + data[idx+1, 5]*data_x[14] + data[idx+1, 6]*data_x[15],-1,1))
+    df = df.iloc[list_ind]
+    df['cos_theta'], df['cos_psi'] = cos_theta, cos_psi
+    return df
     
     
     
