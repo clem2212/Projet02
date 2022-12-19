@@ -249,11 +249,43 @@ def train_GAN(g_lr=1e-4, d_lr=5e-4, batch_size=64, noise_dim=100, total_iteratio
 
 def Get_GAN_event(g_model=None):
     device = torch.device("cpu")
-    fixed_noise = torch.randn(1, noise_dim=100, device=device)
+    noise_dim=100
+    fixed_noise = torch.randn(1, noise_dim, device=device)
     return g_model(fixed_noise).cpu().detach().numpy()
     
 
     
+    
+def get_model(KinE=1.0, name_s=0):
+    PATH = 'saved_model/model'
+
+    if((KinE <= 7.8) & (name_s==0)):
+        PATH=PATH+str(1)
+        
+    elif((KinE > 7.8) & (name_s==0)):
+        PATH=PATH+str(2)
+        
+    elif((KinE <= 1.0) & (name_s==1)):
+        PATH=PATH+str(3)
+        
+    elif((KinE > 1.0) & (name_s==1)):
+        PATH=PATH+str(4)
+        
+    elif((KinE <= 1.0) & (name_s==2)):
+        PATH=PATH+str(5)
+        
+    elif((KinE > 1.0) & (name_s==2)):
+        PATH=PATH+str(6)
+    
+    noise_dim=100
+    dim_out=2
+    if(name_s!=0):
+        dim_out=5
+
+    gmodel = GeneratorMLP(dim_hidden=128, dim_out=dim_out, noise_dim=noise_dim)
+    gmodel.load_state_dict(torch.load(PATH))
+    
+    return gmodel
     
     
     
