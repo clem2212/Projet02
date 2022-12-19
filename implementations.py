@@ -133,14 +133,10 @@ def evaluate_model(model, x_test, y_test):
     
     # Display confussion matrix
     cm = metrics.confusion_matrix(y_test, y_pred)
-    
-    #Individual accuracy of the type of emission 
-    acc_0 = get_accuracy(cm, 0)
-    acc_1 = get_accuracy(cm, 1)
-    acc_2 = get_accuracy(cm, 2)
+
     
             
-    return {'acc': acc, 'cm': cm, 'acc0' : acc_0, 'acc1' : acc_1, 'acc2' : acc_2}
+    return {'acc': acc, 'cm': cm }
 
 def get_percentage(cm, y_test) : 
     
@@ -151,53 +147,12 @@ def get_percentage(cm, y_test) :
     return {'p0' : p0, 'p1' : p1, 'p2' : p2} 
     
     
-    
-def compute_proba(df) : 
-    
-    """ Compute the probability of the classes in the energy range of the data_frame
-    n is the list with the numbe of 0, 1 and 2 of the initial data_frame"""
-    if (df.empty) : 
-        return [0,0,0]
-    
-    n_range = df['name_s'].value_counts().tolist()
-    if (len(n_range) != 3) : 
-        n_range = [0,0,0]
-        n_range[0] = (df['name_s']==0).sum()
-        n_range[1] = (df['name_s']=='e-').sum()
-        n_range[2] = (df['name_s']=='gamma').sum()
-    
-    
-    prob = n_range/np.sum(n_range)
 
-    return prob
-    
-
-    
-""" 
-Set of functions that will be used for the GAN :
-    - map_energy_ranges
+""" Creatio of the table of probabilities depending on the energy range :
     - proba_table
-    - get_model
-"""
+    - compute_proba
+"""    
 
-
-
-def map_energy_ranges(data, energy_ranges):
-    data_emission = data.copy(deep=True)
-    data_emission['E_range'] = 0
-    for i, E in enumerate(energy_ranges):
-        if(i==0):
-            data_emission.loc[(data_emission['KinE(MeV)'] <= E), 'E_range'] = '0 _ ' + '%.1f' % E
-        if(i==len(energy_ranges)-1):
-            data_emission.loc[(data_emission['KinE(MeV)'] > energy_ranges[i-1]) & (data_emission['KinE(MeV)'] <= E), 'E_range']\
-            = '%.1f' % energy_ranges[i-1] + ' _ ' + '%.1f' % E
-            data_emission.loc[(data_emission['KinE(MeV)'] > E), 'E_range'] = '%.1f' % E + ' _ 20'
-        else:
-            data_emission.loc[(data_emission['KinE(MeV)'] > energy_ranges[i-1]) & (data_emission['KinE(MeV)'] <= E), 'E_range']\
-            = '%.1f' % energy_ranges[i-1] + ' _ ' + '%.1f' % E
-    return data_emission
-
-            
 
     
 def proba_table(data, diff = 0.1) : 
@@ -230,13 +185,59 @@ def proba_table(data, diff = 0.1) :
             
         table.loc[len(table.index)] = [E, E_next, prob[0], prob[1], prob[2]]
        
-        sys.stdout.write(f"Finished {E_next:2} out of {20.0:2} {(100.0*E_next)/20:.2f} %\r"); sys.stdout.flush()
+        sys.stdout.write(f"Finished {E_next:.2f} out of {20.0:2} {(100.0*E_next)/20:.2f} %\r"); sys.stdout.flush()
 
 
          
     return table  
     
+def compute_proba(df) : 
     
+    """ Compute the probability of the classes in the energy range of the data_frame """
+    
+    if (df.empty) : 
+        return [0,0,0]
+    
+    n_range = df['name_s'].value_counts().tolist()
+    if (len(n_range) != 3) : 
+        n_range = [0,0,0]
+        n_range[0] = (df['name_s']==0).sum()
+        n_range[1] = (df['name_s']==1).sum()
+        n_range[2] = (df['name_s']==2).sum()
+    
+    
+    prob = n_range/np.sum(n_range)
+
+    return prob    
+
+
+    
+""" 
+Set of functions that will be used for the GAN :
+    - map_energy_ranges
+    - get_model
+"""
+
+
+
+def map_energy_ranges(data, energy_ranges):
+    data_emission = data.copy(deep=True)
+    data_emission['E_range'] = 0
+    for i, E in enumerate(energy_ranges):
+        if(i==0):
+            data_emission.loc[(data_emission['KinE(MeV)'] <= E), 'E_range'] = '0 _ ' + '%.1f' % E
+        if(i==len(energy_ranges)-1):
+            data_emission.loc[(data_emission['KinE(MeV)'] > energy_ranges[i-1]) & (data_emission['KinE(MeV)'] <= E), 'E_range']\
+            = '%.1f' % energy_ranges[i-1] + ' _ ' + '%.1f' % E
+            data_emission.loc[(data_emission['KinE(MeV)'] > E), 'E_range'] = '%.1f' % E + ' _ 20'
+        else:
+            data_emission.loc[(data_emission['KinE(MeV)'] > energy_ranges[i-1]) & (data_emission['KinE(MeV)'] <= E), 'E_range']\
+            = '%.1f' % energy_ranges[i-1] + ' _ ' + '%.1f' % E
+    return data_emission
+
+            
+
+
     
 def get_model(KinE=1.0, name_s=0):
     PATH = 'saved_model/model'
