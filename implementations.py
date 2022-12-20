@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-import numpy as np, queue, pylab as plt, random, sys, enum, math
+import queue, pylab as plt, random, sys, enum, math
 
 def build_df(data_path):
     data = pd.read_csv(data_path,sep="\s+")
@@ -75,7 +75,7 @@ def clean_df(df):
           "X(mm)_s","Y(mm)_s","Z(mm)_s",'DX_s', 'DY_s', 'DZ_s','Kin(MeV)_s']] = \
     df_new[['index', "X(mm)","Y(mm)","Z(mm)",'DX', 'DY', 'DZ', 'KinE(MeV)', 'dE(MeV)','StepLeng',\
           "X(mm)_s","Y(mm)_s","Z(mm)_s",'DX_s', 'DY_s', 'DZ_s','Kin(MeV)_s']]\
-    .apply(pd.to_numeric)
+    .apply(pd.to_numeric)    
     
     return df_new
 
@@ -195,6 +195,8 @@ def compute_proba(df) :
     
     """ Compute the probability of the classes in the energy range of the data_frame """
     
+<<<<<<< HEAD
+=======
     if (df.empty) : 
         return [0,0,0]
     
@@ -274,76 +276,10 @@ import numpy as np, queue, pylab as plt, random, sys, enum, math
 
 class Type(enum.Enum):
     photon = 0; electron = 1; positron = 2; proton = 4; nuetron = 5
-
-class Arena :
-    def __init__(self, wx:float, wy:float, wz:float, nx:int, ny:int, nz:int) :
-        self.M = np.zeros((nx, ny, nz))
-        self.voxel = np.array((wx/nx, wy/ny, wz/nz))
-    def Deposit(self, pos, ene:float) :
-        idx = (pos/self.voxel).astype(int)
-        try :
-            self.M[idx[0],idx[1],idx[2]] += ene
-        except :
-            return False # if a deposit fails, it means we're out of the arena
-        return True
+>>>>>>> 0d12dfcf2d5fb4fa9f77ad706acddc3931bed506
 
 
 
-class Particle :
-    def __init__(self, x:float, y:float, z:float, dx:float, dy:float, dz:float, e:float, t:Type, is_primary:bool=False) :
-        self.pos = np.array((x, y, z), dtype=float)
-        self.dir = np.array((dx, dy, dz), dtype=float)
-        self.ene = e
-        self.type = t
-        self.is_primary = is_primary
-
-    def Lose(self, energy:float, phantom:Arena) :
-        energy = min(energy, self.ene) # lose this much energy and deposit it in the arena
-        self.ene -= energy
-        if not phantom.Deposit(self.pos, energy) :
-            self.ene = 0.0 # if a deposit fails, it means we're out of the arena, so kill the particle
-
-    def Move(self, distance:float) :
-        self.pos += distance*self.dir
-
-    def Rotate(self, cos_angle:float) :
-        s = cos_angle * random.random() # approximate version
-        self.dir[1] += s
-        self.dir[2] += (cos_angle - s)
-        self.dir /= np.linalg.norm(self.dir)
-
-
-def CoreEvent(max_dist:float, max_dele:float, max_cos:float, prob:float) :
-    s = random.random() # simple event generator for testing
-    distance = max_dist*s
-    delta_e = max_dele*s
-    cos_theta = max_cos*(random.random() - 0.5)
-    if s > prob :
-        delta_e *= 0.5
-        Q = Particle(P.pos[0], P.pos[1], P.pos[2], P.dir[0], P.dir[1], P.dir[2], delta_e, Type.electron)
-        Q.Rotate(0.5)
-        return distance, delta_e, cos_theta, Q
-    else :        
-        return distance, delta_e, cos_theta, None
-
-
-
-def GetEvent(P:Particle) :
-    """this is the function you are responsible for creating, given a particle it returns:
-    distance:	distance the particle travels before having this event
-    delta_e:	amount of energy that the particle loses during this event
-    cos_theta:	cosine of the angle that the particle rotates by
-    Q:		a particle generated during this event, or None
-    """
-    if P.type == Type.photon :
-        return CoreEvent(5.0, 0.5, 0.05, 0.99)
-    elif P.type == Type.electron :
-        return CoreEvent(1.0, 0.2, 0.1, 0.75)
-
-
-        
-        
-        
         
         
         
