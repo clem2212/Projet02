@@ -12,7 +12,6 @@ This project requires *Python* with the following Python libraries installed:
 - [matplotlib](http://matplotlib.org/)
 - [seaborn](https://seaborn.pydata.org)
 - [pytorch](https://pytorch.org)
-- 
 
 You will also need to have software installed to run and execute a [Jupyter Notebook](http://jupyter.org/install.html).
 
@@ -25,7 +24,7 @@ The first part of our project is composed of cleaning the data, analysis of the 
 The second part of our projet is the generation of a model with GANs, for the implementation of this part, we first have all the neccessary function in the Python file `GAN_functions.py`. Then, the study done to define the parameters of our GANs is in the notebook `Gan_study.ipynb` and the creation of the GANs model is in `Gan_models.ipynb`. 
 Our 6 GAN models created are stocked in a file named `saved_model` so we don't have to regenerate them each time we want to use them.
 
-Finally the running of our model and the visualisation of the results are in the notebook `final_test.ipynb`
+Finally the running of our model and the visualisation of the results are in the notebook `final_test.ipynb` and the referenced used are in the text file `references.txt`.
 
 
 ### Report
