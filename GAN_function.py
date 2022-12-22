@@ -8,6 +8,10 @@ from implementations import *
 # n= 0    # 0 < E < 7.8  and 7.8 < E < 20 MeV
 
 def GAN1_data(datapath):
+    
+    '''
+    Builds the numpy arrays ready for GAN Model #1 and #2 : no-emission 
+    '''
     df = clean_df(build_df(datapath))
     df = df.loc[df['name_s'] == 0]
     df = get_cos_theta(df)
@@ -26,6 +30,11 @@ def GAN1_data(datapath):
 
 #n= e-   # 0 < E < 1   and   1 < E < 20 MeV
 def GAN2_data(datapath):
+    
+    '''
+    Builds the numpy arrays ready for GAN Model #3 and #4 : electron emission
+    '''
+    
     df = clean_df(build_df(datapath))
     df = df.loc[df['name_s'] == 'e-']
     df = get_angles(df)
@@ -44,6 +53,11 @@ def GAN2_data(datapath):
 
 #n= gamma   # 0 < E < 1   and   1 < E < 20 MeV
 def GAN3_data(datapath):
+    
+    '''
+    Builds the numpy arrays ready for GAN Model #5 and #6 : gamma  emission
+    '''
+    
     df = clean_df(build_df(datapath))
     df = df.loc[df['name_s'] == 'gamma']
     df = get_angles(df)
@@ -78,7 +92,11 @@ def inf_data_gen(dataset=None, batch_size=None):
             
             
 class GeneratorMLP(nn.Module):
-    def __init__(self, dim_hidden=512, dim_out=3, noise_dim=100):
+    
+    '''
+    Definition of Generator network class 
+    '''
+    def __init__(self, dim_hidden=128, dim_out=3, noise_dim=100):
         super(GeneratorMLP, self).__init__()
         self.dim_hidden = dim_hidden
         self.dim_out = dim_out
@@ -94,10 +112,16 @@ class GeneratorMLP(nn.Module):
         )
 
     def forward(self, x):
+        '''
+        computation at every call
+        '''
         return self.net(x)
 
 class DiscriminatorMLP(nn.Module):
-    def __init__(self, dim_hidden=512, dim_gen_out=3):
+    
+    ''' Definition of Discriminator class'''
+    
+    def __init__(self, dim_hidden=128, dim_gen_out=3):
         super(DiscriminatorMLP, self).__init__()
         self.dim_hidden = dim_hidden
         self.dim_gen_out = dim_gen_out
@@ -180,6 +204,10 @@ def train_discriminator(
 
 def launch_GAN(g_lr=1e-4, d_lr=5e-4, batch_size=64, noise_dim=100, total_iterations=5000, criterion=nn.BCELoss(), data=None, g_model=None, d_model=None):
     
+    '''
+    Create fake samples for each iteration of training for Discriminator and Generator networks
+    (Backbone of code from Serie 12 ML course)
+    '''
     device = torch.device("cpu")
     g_optim = torch.optim.Adam(g_model.parameters(), lr=g_lr, betas=(0.5, 0.999))
     d_optim = torch.optim.Adam(d_model.parameters(), lr=d_lr, betas=(0.5, 0.999))
@@ -216,7 +244,9 @@ def launch_GAN(g_lr=1e-4, d_lr=5e-4, batch_size=64, noise_dim=100, total_iterati
         
         
 def train_GAN(g_lr=1e-4, d_lr=5e-4, batch_size=64, noise_dim=100, total_iterations=5000, criterion=nn.BCELoss(), data=None, g_model=None, d_model=None):
-    
+    '''
+    Train the generator and discriminator and returns the train model of the generator
+    '''
     device = torch.device("cpu")
     g_optim = torch.optim.Adam(g_model.parameters(), lr=g_lr, betas=(0.5, 0.999))
     d_optim = torch.optim.Adam(d_model.parameters(), lr=d_lr, betas=(0.5, 0.999))
@@ -248,6 +278,9 @@ def train_GAN(g_lr=1e-4, d_lr=5e-4, batch_size=64, noise_dim=100, total_iteratio
 
 
 def Get_GAN_event(g_model=None):
+    '''
+    Create one random event in type of numpy array with a given model as input
+    '''
     device = torch.device("cpu")
     noise_dim=100
     fixed_noise = torch.randn(1, noise_dim, device=device)
@@ -257,6 +290,10 @@ def Get_GAN_event(g_model=None):
     
     
 def get_model(KinE=1.0, name_s=0):
+    '''
+    Returns the pre-trained model depending on the energy and type of particle emitted
+    Models are saved in saved_model folder
+    '''
     PATH = 'saved_model/model'
 
     if((KinE <= 7.8) & (name_s==0)):

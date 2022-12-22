@@ -194,9 +194,6 @@ def proba_table(data, diff = 0.1) :
 def compute_proba(df) : 
     
     """ Compute the probability of the classes in the energy range of the data_frame """
-    
-<<<<<<< HEAD
-=======
     if (df.empty) : 
         return [0,0,0]
     
@@ -266,28 +263,19 @@ def get_model(KinE=1.0, name_s=0):
     gmodel.load_state_dict(torch.load(PATH))
     
     return gmodel
-    
-    
-    
-    
-""" Test of our model in a simulation """
-
-import numpy as np, queue, pylab as plt, random, sys, enum, math
-
-class Type(enum.Enum):
-    photon = 0; electron = 1; positron = 2; proton = 4; nuetron = 5
->>>>>>> 0d12dfcf2d5fb4fa9f77ad706acddc3931bed506
-
-
-
+         
         
         
-        
-        
-        
-        
-        
-        
+def type_to_num(ptcl):
+     #Each particle is associated to an integer number 
+    if(ptcl == 'gamma'):
+        return 2
+    elif(ptcl == "e-"):
+        return 1
+    elif(ptcl == 0):
+        return 0
+    else:
+        raise Exception('Not a good type of particle')
         
         
         
