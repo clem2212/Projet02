@@ -2,19 +2,7 @@ import pandas as pd
 import numpy as np
 import queue, pylab as plt, random, sys, enum, math
 
-""" Set of function to clean our data in order to import it in a readable DataFrame on which we can work :
-    - build_df : create the dataframe from the data_path
-    - data_file : give the data_path of the rigth file (because we had 10 files of data at the begining)
-    - clean_df : keep the values we need and change them to numeric values 
-    - get_cos_teta : get the angle from the directional features of the DataFrame
-    - get_angles : get all the angles from the directional features of the DataFrame 
-
-"""
-
-
 def build_df(data_path):
-    """ create the dataframe from the data_path in argument """
-    
     data = pd.read_csv(data_path,sep="\s+")
     dframe=pd.DataFrame(data)
     #Step# is the the new row name
@@ -41,8 +29,6 @@ def data_file(i):
 
 
 def clean_df(df):
-    """ Keep the values we need and change them to numeric values """
-    
     #Select interesting values
     df_new = df[["X(mm)","Y(mm)","Z(mm)",'DX', 'DY', 'DZ', 'KinE(MeV)', 'dE(MeV)',\
                  'StepLeng', 'NextVolume', 'ProcName']]
@@ -96,8 +82,6 @@ def clean_df(df):
 
 
 def get_cos_theta(df):
-    """Get the angle from the directional features of the DataFrame"""
-    
     df_new = df.copy(deep=True)
     data = df_new.to_numpy()
     cos_theta = []
@@ -112,8 +96,6 @@ def get_cos_theta(df):
 
 
 def get_angles(df_old):
-    """Get all the angles from the directional features of the DataFrame"""
-    
     df = df_old.copy(deep=True)
     data = df.to_numpy()
     cos_theta = []
@@ -133,17 +115,14 @@ def get_angles(df_old):
     
     
 """ Set of functions to evaluate the accuracy of the different classification model (used in classification.ipynb) :
-    - evaluate_model : give the accuracy and the confussion matrix of our classification 
-    - get_percentage : give the percentage of good prediction for the classes 0,1 and 2.
+    - evaluate_model
+    - get_percentage
+    - compute_proba
 """
 
 
+
 def evaluate_model(model, x_test, y_test):
-    """ give the accuracy and the confussion matrix of our classification
-    Parameters are the model, the test output and input on which the test is done.
-    """
-    
-    
     from sklearn import metrics
 
     # Predict Test Data 
@@ -160,9 +139,6 @@ def evaluate_model(model, x_test, y_test):
     return {'acc': acc, 'cm': cm }
 
 def get_percentage(cm, y_test) : 
-     """ give the percentage of good prediction for the classes 0,1 and 2.
-    Parameters are the confussion matrix and the expected output values in y_test.
-    """
     
     p0 = cm[0,0]/(y_test == 0).sum()*100
     p1 = cm[1,1]/(y_test == 1).sum()*100
@@ -172,18 +148,15 @@ def get_percentage(cm, y_test) :
     
     
 
-""" Creation of the table of probabilities depending on the energy range :
-    - proba_table : creation of the table of probabilities from the data
-    - compute_proba : Compute the probability of the classes in the energy range of the data_frame given
+""" Creatio of the table of probabilities depending on the energy range :
+    - proba_table
+    - compute_proba
 """    
 
 
     
 def proba_table(data, diff = 0.1) : 
-    """creation of the table of probabilities from the data. 
-    Parameters are the data from which we will read the energy and the probability to obtain an emission in every specific energy ranges. 
-    diff is the length of the space between two energy ranges and it's set by default to 0.1
-    """
+    
     
     table = pd.DataFrame(columns=['Energy_min', 'Energy_max' ,'proba_0','proba_1','proba_2'])
    
@@ -214,15 +187,13 @@ def proba_table(data, diff = 0.1) :
        
         sys.stdout.write(f"Finished {E_next:.2f} out of {20.0:2} {(100.0*E_next)/20:.2f} %\r"); sys.stdout.flush()
 
+
+         
     return table  
     
 def compute_proba(df) : 
     
     """ Compute the probability of the classes in the energy range of the data_frame """
-<<<<<<< HEAD
-=======
-    
->>>>>>> 0182bf5cbdd4a35b0b1ca22f10bb0a981b8c130b
     if (df.empty) : 
         return [0,0,0]
     
@@ -242,15 +213,13 @@ def compute_proba(df) :
     
 """ 
 Set of functions that will be used for the GAN :
-    - map_energy_ranges  : map the data on the corresponding energy range
-    - get_model : access to the right stored model return the corresponding GAN to use
+    - map_energy_ranges
+    - get_model
 """
 
 
 
 def map_energy_ranges(data, energy_ranges):
-    """ map the data on the corresponding energy range"""
-    
     data_emission = data.copy(deep=True)
     data_emission['E_range'] = 0
     for i, E in enumerate(energy_ranges):
@@ -270,8 +239,6 @@ def map_energy_ranges(data, energy_ranges):
 
     
 def get_model(KinE=1.0, name_s=0):
-    """  access to the right stored model return the corresponding GAN to use """
-    
     PATH = 'saved_model/model'
 
     if((KinE <= 7.8) & (name_s==0)):
@@ -296,7 +263,6 @@ def get_model(KinE=1.0, name_s=0):
     gmodel.load_state_dict(torch.load(PATH))
     
     return gmodel
-<<<<<<< HEAD
          
         
         
@@ -321,6 +287,4 @@ def type_to_num(ptcl):
         
         
     
-=======
->>>>>>> 0182bf5cbdd4a35b0b1ca22f10bb0a981b8c130b
     
