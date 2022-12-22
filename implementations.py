@@ -279,8 +279,145 @@ def type_to_num(ptcl):
         
         
         
+## TEST
+
+class Type(enum.Enum):
+    photon = 0; electron = 1; positron = 2; proton = 4; nuetron = 5
+
+class Arena :
+    def __init__(self, wx:float, wy:float, wz:float, nx:int, ny:int, nz:int) :
+        self.M = np.zeros((nx, ny, nz))
+        self.voxel = np.array((wx/nx, wy/ny, wz/nz))
+    def Deposit(self, pos, ene:float) :
+        #wx = self.M.shape[0]*self.voxel[0]
+        #wy = self.M.shape[1]*self.voxel[1]
+        #wz = self.M.shape[2]*self.voxel[2]
+        
+        if((pos[0] > 0) & (pos[1] > 0) & (pos[2] > 0)):
+            idx = (pos/self.voxel).astype(int)
+            try :
+                self.M[idx[0],idx[1],idx[2]] += ene
+            except :
+                return False # if a deposit fails, it means we're out of the arena
+            return True
+        else:
+            return False
+
+
+
+class Particle :
+    def __init__(self, x:float, y:float, z:float, dx:float, dy:float, dz:float, e:float, t:Type, is_primary:bool=False) :
+        self.pos = np.array((x, y, z), dtype=float)
+        self.dir = np.array((dx, dy, dz), dtype=float)
+        self.ene = e
+        self.type = t
+        self.is_primary = is_primary
+
+    def Lose(self, energy:float, phantom:Arena) :
+        energy = min(energy, self.ene) # lose this much energy and deposit it in the arena
+        self.ene -= energy
+        if not phantom.Deposit(self.pos, energy) :
+            self.ene = 0.0 # if a deposit fails, it means we're out of the arena, so kill the particle
+
+    def Move(self, distance:float) :
+        self.pos += distance*self.dir
+
+    def Rotate(self, cos_angle:float) :
+        s1, s2 = np.random.randint(0,3,size=2)
+        sin_theta = np.sqrt(1-np.clip(cos_theta,-1,1)**2)
+        x_bis = self.dir[s1]
+        y_bis = self.dir[s2]
+        self.dir[s1] = x_bis*cos_theta - y_bis*sin_theta
+        self.dir[s2] = x_bis*sin_theta + y_bis*cos_theta
+        self.dir /= np.linalg.norm(self.dir)
+
+def CoreEvent(max_dist:float, max_dele:float, max_cos:float, prob:float) :
+    s = random.random() # simple event generator for testing
+    distance = max_dist*s
+    delta_e = max_dele*s
+    cos_theta = max_cos*(random.random() - 0.5)
+    if s > prob :
+        delta_e *= 0.5
+        Q = Particle(P.pos[0], P.pos[1], P.pos[2], P.dir[0], P.dir[1], P.dir[2], delta_e, Type.electron)
+        Q.Rotate(0.5)
+        return distance, delta_e, cos_theta, Q
+    else :        
+        return distance, delta_e, cos_theta, None
+
+
+
+def GetEvent(P:Particle, table_of_p) :
+    """CoreEvent by default if we need to simulate a photon, GetEvent_Model for electron event generation from the GAN models:
+    distance:	distance the particle travels before having this event
+    delta_e:	amount of energy that the particle loses during this event
+    cos_theta:	cosine of the angle that the particle rotates by
+    Q:		a particle generated during this event, or None
+    """
+    if P.type == Type.photon :
+        return CoreEvent(5.0, 0.5, 0.05, 0.99)
+    elif P.type == Type.electron :
+        distance, delta_e, cos_theta, generated_particle = GetEvent_Model(P, table_of_p)
+        return distance, delta_e, cos_theta, generated_particle
+
+
         
         
+def GetEvent_Model(P:Particle, table_of_p):
+    # Compute probability of particles
+    table = table_of_p.copy(deep=True)
+    KinE = P.ene
+    
+    #Get probability of emission type (or None) 
+    prob_all = table.loc[(table['Energy_min'] <  KinE) & (table['Energy_max'] >= KinE)]
+    prob0, prob1 = prob_all[['proba_0', 'proba_1']].values[0,:]
+    
+    #From uniform random variable get the emission type
+    s = random.random() 
+    if s <= prob0:
+        name_s = 0
+    elif ((s > prob0) & (s < prob0 + prob1)):
+        name_s = 1
+    else:
+        name_s = 2
+    
+    # Now we have the type of the particle
+    # Let's find the model necessary for the particle
+    model = get_model(KinE=KinE, name_s=name_s)
+    
+    # And generate a random event from this event
+    event = Get_GAN_event(g_model=model)[0]
+    
+    # We store the data generated
+    if name_s!=0:
+        #{'cos_theta': 0, 'dE': 1, 'cos_phi': 2, 'cos_psi': 3, 'E_s': 4}
+        cos_theta=event[0]
+        dE=event[1]
+        cos_phi=event[2]
+        EQ=np.minimum(event[4],KinE)
+    else:
+        cos_theta=event[0]
+        dE=event[1]
+     
+    
+    # We select the return needed
+    if(dE < 0):
+        dE = abs(dE)
+        
+    # Get the distance that we found to be proportional to dE variable in data analysis
+    distance=6.170464696*dE
+    
+
+    # Return depending if there is emission or not
+    if name_s!=0:
+        if (name_s == 1):
+            name_s = Type.electron
+        else:
+            name_s = Type.photon
+        Q = Particle(P.pos[0], P.pos[1], P.pos[2], P.dir[0], P.dir[1], P.dir[2], EQ, name_s)
+        Q.Rotate(cos_phi)
+        return distance, dE, cos_theta, Q
+    else:
+        return distance, dE, cos_theta, None        
         
         
         
